@@ -13,59 +13,92 @@ namespace WVT
     public partial class Form1 : Form
     {
         Graphics g;
-        PointF A, B, C, D, E, F;
+        PointF A, B;
         Pen Boundary;
         Pen red = Pens.Red;
         Pen blue = Pens.Blue;
+        Rectangle Window, ViewPort;
+        bool DrawPolygonMode;
+        List<PointF> Points;
 
         public Form1()
         {
             InitializeComponent();
-            A = new PointF(0, 0);
-            B = new PointF(0, Canvas.Height);
-            C = new PointF(Canvas.Width / 2, 0);
-            D = new PointF(Canvas.Width / 2, Canvas.Height);
-            E = new PointF(Canvas.Width, 0);
-            F = new PointF(Canvas.Width, Canvas.Height);
+            A = new PointF(Canvas.Width / 2, 0);
+            B = new PointF(Canvas.Width / 2, Canvas.Height);
 
             Boundary = new Pen(Color.Black, 2f);
+            Points = new List<PointF>();
+
+            DrawPolygonMode = true;
+
+            Window = new Rectangle(50, 50, 200, 170);
+            ViewPort = new Rectangle(50, 50, 200, 85);
         }
 
         private void Canvas_Paint(object sender, PaintEventArgs e)
         {
             g = e.Graphics;
-            g.DrawLine(Boundary, C, D);
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            g.DrawLine(Boundary, A, B);
+            g.DrawRectangle(Boundary, Window);
+            g.DrawRectangle(Boundary, A.X + ViewPort.X, ViewPort.Y, ViewPort.Width, ViewPort.Height);
 
-            //Window
-            int XWmin = 50, YWmin = 50, XWmax = 200, YWmax = 170;
-            g.DrawRectangle(Boundary, XWmin, YWmin, XWmax, YWmax);
+            if (!DrawPolygonMode)
+            {
 
-            //ViewPort
-            int XVmin = 70, YVmin = 70, XVmax = 110, YVmax = 200;
-            g.DrawRectangle(Boundary, C.X + XVmin, YVmin, XVmax, YVmax);
+            }
+            else
+            {
+                if (Points.Count == 1)
+                {
+                    g.DrawRectangle(red, Points[0].X, Points[0].Y, 1, 1);
+                    PointF p = WindowtoViewport((int)Points[0].X, (int)Points[0].Y, Window.X, Window.Y, Window.Width, Window.Height,
+                                                                                    ViewPort.X, ViewPort.Y, ViewPort.Width, ViewPort.Height);
+                    g.DrawRectangle(blue, p.X, p.Y, 1, 1);
+                }
+                else
+                {
+                    for (int i = 0; i < Points.Count - 1; i++)
+                    {
+                        g.DrawRectangle(red, Points[i].X, Points[i].Y, 1, 1);
+                        PointF p1 = WindowtoViewport((int)Points[i].X, (int)Points[i].Y, Window.X, Window.Y, Window.Width, Window.Height,
+                                                                                    ViewPort.X, ViewPort.Y, ViewPort.Width, ViewPort.Height);
+                        g.DrawRectangle(blue, p1.X, p1.Y, 1, 1);
 
-            //Point in my Window
-            int xw = 90; int yw = 140;
-            g.DrawRectangle(red, xw, yw, 1, 1);
-            
-            //Point in the ViewPort
-            PointF p = WindowtoViewport(xw, yw, XWmax, YWmax, XWmin, YWmin, XVmax, YVmax, XVmin, YVmin);
-            g.DrawRectangle(blue, C.X + p.X, p.Y, 1, 1);
+
+                        g.DrawRectangle(red, Points[i + 1].X, Points[i + 1].Y, 1, 1);
+                        PointF p2 = WindowtoViewport((int)Points[i + 1].X, (int)Points[i + 1].Y, Window.X, Window.Y, Window.Width, Window.Height,
+                                                                                    ViewPort.X, ViewPort.Y, ViewPort.Width, ViewPort.Height);
+                        g.DrawRectangle(blue, p2.X, p2.Y, 1, 1);
+
+
+                        g.DrawLine(red, Points[i], Points[i + 1]);
+                        g.DrawLine(blue, p1, p2);
+                    }
+                }
+            }
         }
 
-        static PointF WindowtoViewport(int xw, int yw,
-                                       int XWmax, int YWmax,
-                                       int XWmin, int YWmin,
-                                       int XVmax, int YVmax,
-                                       int XVmin, int YVmin)
+        private void Canvas_MouseUp(object sender, MouseEventArgs e)
         {
-            float sx = (float)(XVmax - XVmin) / (XWmax - XWmin);
-            float sy = (float)(YVmax - YVmin) / (YWmax - YWmin);
+            if (e.X > 0 && e.X < Canvas.Width && e.Y > 0 && e.Y < Canvas.Width)
+                Points.Add(new PointF(e.X, e.Y));
+            Canvas.Refresh();
+        }
 
-            int xv = (int)(XVmin + ((xw - XWmin) * sx));
-            int yv = (int)(YVmin + ((yw - YWmin) * sy));
+        private PointF WindowtoViewport(int xw, int yw, int XWmin, int YWmin, int XWmax, int YWmax, int XVmin, int YVmin, int XVmax, int YVmax)
+        {
+            //float sx = (float)(XVmax - XVmin) / (XWmax - XWmin);
+            //float sy = (float)(YVmax - YVmin) / (YWmax - YWmin);
 
-            return new PointF(xv, yv);
+            float sx = (float)XVmax / XWmax;
+            float sy = (float)YVmax / YWmax;
+
+            int xv = (int)(XVmin + (xw - XWmin) * sx);
+            int yv = (int)(YVmin + (yw - YWmin) * sy);
+
+            return new PointF(A.X + xv, yv);
         }
     }
 }
