@@ -1,0 +1,10 @@
+E:\Órák\5. félév\Bevgraf\Vizsga\WindowViewportTr\WVT\WVT\bin\Debug\WVT.exe.config
+E:\Órák\5. félév\Bevgraf\Vizsga\WindowViewportTr\WVT\WVT\bin\Debug\WVT.exe
+E:\Órák\5. félév\Bevgraf\Vizsga\WindowViewportTr\WVT\WVT\bin\Debug\WVT.pdb
+E:\Órák\5. félév\Bevgraf\Vizsga\WindowViewportTr\WVT\WVT\obj\Debug\WVT.csprojAssemblyReference.cache
+E:\Órák\5. félév\Bevgraf\Vizsga\WindowViewportTr\WVT\WVT\obj\Debug\WVT.Form1.resources
+E:\Órák\5. félév\Bevgraf\Vizsga\WindowViewportTr\WVT\WVT\obj\Debug\WVT.Properties.Resources.resources
+E:\Órák\5. félév\Bevgraf\Vizsga\WindowViewportTr\WVT\WVT\obj\Debug\WVT.csproj.GenerateResource.cache
+E:\Órák\5. félév\Bevgraf\Vizsga\WindowViewportTr\WVT\WVT\obj\Debug\WVT.csproj.CoreCompileInputs.cache
+E:\Órák\5. félév\Bevgraf\Vizsga\WindowViewportTr\WVT\WVT\obj\Debug\WVT.exe
+E:\Órák\5. félév\Bevgraf\Vizsga\WindowViewportTr\WVT\WVT\obj\Debug\WVT.pdb

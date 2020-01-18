@@ -28,13 +28,36 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            this.Canvas = new System.Windows.Forms.PictureBox();
+            ((System.ComponentModel.ISupportInitialize)(this.Canvas)).BeginInit();
+            this.SuspendLayout();
+            // 
+            // Canvas
+            // 
+            this.Canvas.BackColor = System.Drawing.Color.White;
+            this.Canvas.Location = new System.Drawing.Point(13, 13);
+            this.Canvas.Name = "Canvas";
+            this.Canvas.Size = new System.Drawing.Size(700, 400);
+            this.Canvas.TabIndex = 0;
+            this.Canvas.TabStop = false;
+            this.Canvas.Paint += new System.Windows.Forms.PaintEventHandler(this.Canvas_Paint);
+            // 
+            // Form1
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(721, 420);
+            this.Controls.Add(this.Canvas);
+            this.Name = "Form1";
             this.Text = "Form1";
+            ((System.ComponentModel.ISupportInitialize)(this.Canvas)).EndInit();
+            this.ResumeLayout(false);
+
         }
 
         #endregion
+
+        private System.Windows.Forms.PictureBox Canvas;
     }
 }
 
