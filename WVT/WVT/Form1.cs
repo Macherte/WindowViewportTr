@@ -15,6 +15,7 @@ namespace WVT
         Graphics g;
         PointF A, B, C, D, E, F;
         Pen Boundary;
+        Pen red = Pens.Red;
         public Form1()
         {
             InitializeComponent();
@@ -35,14 +36,19 @@ namespace WVT
 
             float wxmin = 50; float wymin = 50; float wxmax = 250; float wymax = 100;
             g.DrawRectangle(Boundary, wxmin, wymin, wxmax, wymax);
+            float vxmin = C.X + 50; float vymin = 50; float vxmax = C.X + 250; float vymax = 100;
+            g.DrawRectangle(Boundary, vxmin, vymin, 250, vymax);
+            
+            float wx = 80; float wy = 110;
+            g.DrawRectangle(red, wx, wy, 1, 1);
+            //float a = (wx-wxmin) / (wxmax - wxmin);
+            float dwx = wxmax - wxmin; float dwy = wymax - wymin;
+            float dvx = vxmax - vxmin; float dvy = vymax - vymin;
 
+            float vx = (dvx / dwx) * wx + (vxmin - wxmin * (dvx / dwx));
+            float vy = (dvy / dwy) * wy + (vymin - wymin * (dvy / dwy));
 
-            float vxmin = C.X + 100; float vymin = 30; float vxmax = 150; float vymax = 300;
-            g.DrawRectangle(Boundary, vxmin, vymin, vxmax, vymax);
-            /*
-            PointF wx = new PointF(80, 110);
-            g.DrawRectangle(Boundary, wx.X, wx.Y, 1, 1);
-            float a = (wx.X - Wmin.X) / (Wmax.X - Wmin.X);*/
+            g.DrawRectangle(red, vx, vy, 1, 1);
         }
     }
 }
