@@ -16,6 +16,8 @@ namespace WVT
         PointF A, B, C, D, E, F;
         Pen Boundary;
         Pen red = Pens.Red;
+        Pen blue = Pens.Blue;
+
         public Form1()
         {
             InitializeComponent();
@@ -34,21 +36,36 @@ namespace WVT
             g = e.Graphics;
             g.DrawLine(Boundary, C, D);
 
-            float wxmin = 50; float wymin = 50; float wxmax = 250; float wymax = 100;
-            g.DrawRectangle(Boundary, wxmin, wymin, wxmax, wymax);
-            float vxmin = C.X + 50; float vymin = 50; float vxmax = C.X + 250; float vymax = 100;
-            g.DrawRectangle(Boundary, vxmin, vymin, 250, vymax);
+            //Window
+            int XWmin = 50, YWmin = 50, XWmax = 200, YWmax = 170;
+            g.DrawRectangle(Boundary, XWmin, YWmin, XWmax, YWmax);
+
+            //ViewPort
+            int XVmin = 70, YVmin = 70, XVmax = 110, YVmax = 200;
+            g.DrawRectangle(Boundary, C.X + XVmin, YVmin, XVmax, YVmax);
+
+            //Point in my Window
+            int xw = 90; int yw = 140;
+            g.DrawRectangle(red, xw, yw, 1, 1);
             
-            float wx = 80; float wy = 110;
-            g.DrawRectangle(red, wx, wy, 1, 1);
-            //float a = (wx-wxmin) / (wxmax - wxmin);
-            float dwx = wxmax - wxmin; float dwy = wymax - wymin;
-            float dvx = vxmax - vxmin; float dvy = vymax - vymin;
+            //Point in the ViewPort
+            PointF p = WindowtoViewport(xw, yw, XWmax, YWmax, XWmin, YWmin, XVmax, YVmax, XVmin, YVmin);
+            g.DrawRectangle(blue, C.X + p.X, p.Y, 1, 1);
+        }
 
-            float vx = (dvx / dwx) * wx + (vxmin - wxmin * (dvx / dwx));
-            float vy = (dvy / dwy) * wy + (vymin - wymin * (dvy / dwy));
+        static PointF WindowtoViewport(int xw, int yw,
+                                       int XWmax, int YWmax,
+                                       int XWmin, int YWmin,
+                                       int XVmax, int YVmax,
+                                       int XVmin, int YVmin)
+        {
+            float sx = (float)(XVmax - XVmin) / (XWmax - XWmin);
+            float sy = (float)(YVmax - YVmin) / (YWmax - YWmin);
 
-            g.DrawRectangle(red, vx, vy, 1, 1);
+            int xv = (int)(XVmin + ((xw - XWmin) * sx));
+            int yv = (int)(YVmin + ((yw - YWmin) * sy));
+
+            return new PointF(xv, yv);
         }
     }
 }
