@@ -18,8 +18,13 @@ namespace WVT
         Pen red = Pens.Red;
         Pen blue = Pens.Blue;
         Rectangle Window, ViewPort;
+        int WindowWidth, WindowHeight, ViewWidth, ViewHeight;
+        Point WindowLoc, ViewLoc;
         bool DrawPolygonMode;
+        bool DrawWindow;
+        bool MouseDown;
         List<PointF> Points;
+
 
         public Form1()
         {
@@ -30,10 +35,14 @@ namespace WVT
             Boundary = new Pen(Color.Black, 2f);
             Points = new List<PointF>();
 
-            DrawPolygonMode = true;
+            DrawPolygonMode = false;
+            DrawWindow = true;
+            MouseDown = false;
 
-            Window = new Rectangle(50, 50, 200, 170);
-            ViewPort = new Rectangle(50, 50, 200, 85);
+            //Window = new Rectangle(50, 50, 200, 170);
+            //ViewPort = new Rectangle(50, 50, 200, 85);
+            //Window = new Rectangle();
+            //ViewPort = new Rectangle();
         }
 
         private void Canvas_Paint(object sender, PaintEventArgs e)
@@ -41,14 +50,16 @@ namespace WVT
             g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
             g.DrawLine(Boundary, A, B);
+            //g.DrawRectangle(Boundary, Window);
+            //g.DrawRectangle(Boundary, A.X + ViewPort.X, ViewPort.Y, ViewPort.Width, ViewPort.Height);
+
+
+
             g.DrawRectangle(Boundary, Window);
-            g.DrawRectangle(Boundary, A.X + ViewPort.X, ViewPort.Y, ViewPort.Width, ViewPort.Height);
+            if (!DrawWindow)
+                g.DrawRectangle(Boundary, ViewPort);
 
-            if (!DrawPolygonMode)
-            {
-
-            }
-            else
+            if (DrawPolygonMode)
             {
                 if (Points.Count == 1)
                 {
@@ -80,11 +91,64 @@ namespace WVT
             }
         }
 
+        private void Canvas_MouseDown(object sender, MouseEventArgs e)
+        {
+            MouseDown = true;
+            if (!DrawPolygonMode)
+            {
+                if (DrawWindow)
+                {
+                    if (e.X < A.X)
+                        WindowLoc = e.Location;
+                }
+                else
+                {
+                    if (e.X > A.X)
+                        ViewLoc = e.Location;
+                }
+            }
+        }
+
+        private void Canvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (MouseDown)
+            {
+                if (!DrawPolygonMode)
+                {
+                    if (DrawWindow)
+                    {
+                        WindowWidth = e.X - Window.X;
+                        WindowHeight = e.Y - Window.Y;
+                        Window = new Rectangle(WindowLoc, new Size(WindowWidth, WindowHeight));
+                        Canvas.Invalidate();
+                    }
+                    else
+                    {
+                        ViewWidth = e.X - ViewPort.X;
+                        ViewHeight = e.Y - ViewPort.Y;
+                        ViewPort = new Rectangle(ViewLoc, new Size(ViewWidth, ViewHeight));
+                        Canvas.Invalidate();
+                    }
+                }
+            }
+        }
+
         private void Canvas_MouseUp(object sender, MouseEventArgs e)
         {
-            if (e.X > 0 && e.X < Canvas.Width && e.Y > 0 && e.Y < Canvas.Width)
-                Points.Add(new PointF(e.X, e.Y));
-            Canvas.Refresh();
+            if (DrawPolygonMode)
+            {
+                if (e.X > 0 && e.X < Canvas.Width && e.Y > 0 && e.Y < Canvas.Width) Points.Add(new PointF(e.X, e.Y));
+                Canvas.Invalidate();
+            }
+            else
+            {
+                if (DrawWindow) DrawWindow = false;
+                else DrawPolygonMode = true;
+            }
+
+
+            MouseDown = false;
+
         }
 
         private PointF WindowtoViewport(int xw, int yw, int XWmin, int YWmin, int XWmax, int YWmax, int XVmin, int YVmin, int XVmax, int YVmax)
