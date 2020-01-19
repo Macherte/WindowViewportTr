@@ -20,6 +20,7 @@ namespace WVT
         Point WindowLoc, ViewLoc;
         bool DrawPolygonMode, DrawWindow, MousePressed;
         List<PointF> Points;
+        List<PointF> Transformed;
 
 
         public Form1()
@@ -30,6 +31,8 @@ namespace WVT
 
             Boundary = new Pen(Color.Black, 2f);
             Points = new List<PointF>();
+            Transformed = new List<PointF>();
+
 
             DrawPolygonMode = false;
             DrawWindow = true;
@@ -48,33 +51,20 @@ namespace WVT
 
             if (DrawPolygonMode)
             {
-                if (Points.Count == 1)
+                for (int i = 0; i < Points.Count; i++)
                 {
-                    g.DrawRectangle(red, Points[0].X, Points[0].Y, 1, 1);
-                    PointF p = WindowtoViewport((int)Points[0].X, (int)Points[0].Y, Window.X, Window.Y, Window.Width, Window.Height,
-                                                                                    ViewPort.X, ViewPort.Y, ViewPort.Width, ViewPort.Height);
-                    g.DrawRectangle(blue, p.X, p.Y, 1, 1);
-                }
-                else
-                {
-                    for (int i = 0; i < Points.Count - 1; i++)
+                    if (Points.Count == 1)
                     {
                         g.DrawRectangle(red, Points[i].X, Points[i].Y, 1, 1);
-                        PointF p1 = WindowtoViewport((int)Points[i].X, (int)Points[i].Y, Window.X, Window.Y, Window.Width, Window.Height,
-                                                                                    ViewPort.X, ViewPort.Y, ViewPort.Width, ViewPort.Height);
-                        g.DrawRectangle(blue, p1.X, p1.Y, 1, 1);
-
-
-                        g.DrawRectangle(red, Points[i + 1].X, Points[i + 1].Y, 1, 1);
-                        PointF p2 = WindowtoViewport((int)Points[i + 1].X, (int)Points[i + 1].Y, Window.X, Window.Y, Window.Width, Window.Height,
-                                                                                    ViewPort.X, ViewPort.Y, ViewPort.Width, ViewPort.Height);
-                        g.DrawRectangle(blue, p2.X, p2.Y, 1, 1);
-
-
-                        g.DrawLine(red, Points[i], Points[i + 1]);
-                        g.DrawLine(blue, p1, p2);
+                        g.DrawRectangle(blue, Transformed[i].X, Transformed[i].Y, 1, 1);
+                    }
+                    else
+                    {
+                        g.DrawPolygon(red, Points.ToArray());
+                        g.DrawPolygon(blue, Transformed.ToArray());
                     }
                 }
+
             }
         }
 
@@ -124,7 +114,12 @@ namespace WVT
         {
             if (DrawPolygonMode)
             {
-                if (e.X > 0 && e.X < Canvas.Width && e.Y > 0 && e.Y < Canvas.Width) Points.Add(new PointF(e.X, e.Y));
+                if (e.X > 0 && e.X < Canvas.Width && e.Y > 0 && e.Y < Canvas.Width)
+                {
+                    Points.Add(new PointF(e.X, e.Y));
+                    Transformed.Add(WindowtoViewport((int)e.X, (int)e.Y, Window.X, Window.Y, Window.Width, Window.Height,
+                                                                         ViewPort.X, ViewPort.Y, ViewPort.Width, ViewPort.Height));
+                }
                 Canvas.Invalidate();
             }
             else
@@ -132,10 +127,7 @@ namespace WVT
                 if (DrawWindow) DrawWindow = false;
                 else DrawPolygonMode = true;
             }
-
-
             MousePressed = false;
-
         }
 
         private PointF WindowtoViewport(int xw, int yw, int XWmin, int YWmin, int XWmax, int YWmax, int XVmin, int YVmin, int XVmax, int YVmax)
