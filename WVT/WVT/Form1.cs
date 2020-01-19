@@ -14,16 +14,18 @@ namespace WVT
     {
         Graphics g;
         PointF A, B;
-        Pen Boundary, red = Pens.Red, blue = Pens.Blue;
+        Pen PenBoundary, PenPolygon, PenInPolygon;
+        Brush BrushFillPolygon;
         Rectangle Window, ViewPort;
         int WindowWidth, WindowHeight, ViewWidth, ViewHeight;
+        float ax, ay;
         Point WindowLoc, ViewLoc;
         bool DrawPolygonMode, DrawWindow, MousePressed;
-        List<PointF> Points;
-        List<PointF> Transformed;
-        byte LEFT = 1,     
-             RIGHT = 2,     
-             BOTTOM = 4,    
+        List<PointF> Points, Transformed, WindowPolygonToFill, ViewPolygonToFill;
+
+        byte LEFT = 1,
+             RIGHT = 2,
+             BOTTOM = 4,
              TOP = 8;
 
         public Form1()
@@ -32,10 +34,15 @@ namespace WVT
             A = new PointF(Canvas.Width / 2, 0);
             B = new PointF(Canvas.Width / 2, Canvas.Height);
 
-            Boundary = new Pen(Color.Black, 2f);
+            PenBoundary = new Pen(Color.Black, 3f);
+            PenPolygon = new Pen(Color.Black, 2.5f);
+            PenInPolygon = new Pen(Color.Green, 2.5f);
+            BrushFillPolygon = new SolidBrush(Color.LightGreen);
+
             Points = new List<PointF>();
             Transformed = new List<PointF>();
-
+            WindowPolygonToFill = new List<PointF>();
+            ViewPolygonToFill = new List<PointF>();
 
             DrawPolygonMode = false;
             DrawWindow = true;
@@ -46,38 +53,63 @@ namespace WVT
         {
             g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            g.DrawLine(Boundary, A, B);
+            g.DrawLine(PenBoundary, A, B);
 
-            g.DrawRectangle(Boundary, Window);
+            g.DrawRectangle(PenBoundary, Window);
             if (!DrawWindow)
-                g.DrawRectangle(Boundary, ViewPort);
+                g.DrawRectangle(PenBoundary, ViewPort);
 
             if (DrawPolygonMode)
             {
+                WindowPolygonToFill.Clear();
+                ViewPolygonToFill.Clear();
                 if (Points.Count == 1)
                 {
-                    g.DrawRectangle(red, Points[0].X, Points[0].Y, 1, 1);
-                    g.DrawRectangle(blue, Transformed[0].X, Transformed[0].Y, 1, 1);
+                    g.DrawRectangle(PenPolygon, Points[0].X, Points[0].Y, 1, 1);
+                    g.DrawRectangle(PenPolygon, Transformed[0].X, Transformed[0].Y, 1, 1);
                 }
                 else if (Points.Count == 2)
                 {
-                    g.DrawLine(red, Points[0], Points[1]);
-                    g.DrawLine(blue, Transformed[0], Transformed[1]);
+                    g.DrawLine(PenPolygon, Points[0], Points[1]);
+                    CohenSutherland(Points[0], Points[1], Window.X, Window.X + Window.Width, Window.Y, Window.Y + Window.Height);
+
+                    g.DrawLine(PenPolygon, Transformed[0], Transformed[1]);
+                    CohenSutherland(Transformed[0], Transformed[1], ViewPort.X, ViewPort.X + ViewPort.Width, ViewPort.Y, ViewPort.Y + ViewPort.Height);
                 }
                 else
                 {
                     for (int i = 0; i < Points.Count; i++)
                     {
+                        
+                        ax = (Points[i].X - Window.X) / ((Window.X + Window.Width) - Window.X);
+                        ay = (Points[i].Y - Window.Y) / ((Window.Y + Window.Height) - Window.Y);
+                        if (ax >= 0 && ax <= 1 && ay >= 0 && ay <= 1)
+                        {
+                            WindowPolygonToFill.Add(Points[i]);
+                            ViewPolygonToFill.Add(Transformed[i]);
+                        }
+
                         if (i == Points.IndexOf(Points.Last()))
                         {
-                            g.DrawLine(red, Points[i], Points[0]);
-                            g.DrawLine(blue, Transformed[i], Transformed[0]);
+                            g.DrawLine(PenPolygon, Points[i], Points[0]);
+                            CohenSutherland(Points[i], Points[0], Window.X, Window.X + Window.Width, Window.Y, Window.Y + Window.Height, WindowPolygonToFill);
+
+                            g.DrawLine(PenPolygon, Transformed[i], Transformed[0]);
+                            CohenSutherland(Transformed[i], Transformed[0], ViewPort.X, ViewPort.X + ViewPort.Width, ViewPort.Y, ViewPort.Y + ViewPort.Height, ViewPolygonToFill);
+
                         }
                         else
                         {
-                            g.DrawLine(red, Points[i], Points[i + 1]);
-                            g.DrawLine(blue, Transformed[i], Transformed[i + 1]);
+                            g.DrawLine(PenPolygon, Points[i], Points[i + 1]);
+                            CohenSutherland(Points[i], Points[i + 1], Window.X, Window.X + Window.Width, Window.Y, Window.Y + Window.Height, WindowPolygonToFill);
+
+
+                            g.DrawLine(PenPolygon, Transformed[i], Transformed[i + 1]);
+                            CohenSutherland(Transformed[i], Transformed[i + 1], ViewPort.X, ViewPort.X + ViewPort.Width, ViewPort.Y, ViewPort.Y + ViewPort.Height, ViewPolygonToFill);
+
                         }
+                        g.FillPolygon(BrushFillPolygon, WindowPolygonToFill.ToArray());
+                        g.FillPolygon(BrushFillPolygon, ViewPolygonToFill.ToArray());
                     }
                 }
             }
@@ -159,8 +191,9 @@ namespace WVT
             return new PointF(xv, yv);
         }
 
-        private void CohenSutherland(Pen pen, float x0, float y0, float x1, float y1, int BOUND_LEFT, int BOUND_RIGHT, int BOUND_TOP, int BOUND_BOTTOM)
+        private void CohenSutherland(PointF Start, PointF End, int BOUND_LEFT, int BOUND_RIGHT, int BOUND_TOP, int BOUND_BOTTOM)
         {
+            float x0 = Start.X, y0 = Start.Y, x1 = End.X, y1 = End.Y;
             byte outCode0 = OutCode(x0, y0, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM),
                  outCode1 = OutCode(x1, y1, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM),
                  outCode;
@@ -215,11 +248,76 @@ namespace WVT
                     }
                 }
             }
+            if (accept)
+                g.DrawLine(PenInPolygon, x0, y0, x1, y1);
+        }
+
+        private void CohenSutherland(PointF Start, PointF End, int BOUND_LEFT, int BOUND_RIGHT, int BOUND_TOP, int BOUND_BOTTOM, List<PointF> list)
+        {
+            float x0 = Start.X, y0 = Start.Y, x1 = End.X, y1 = End.Y;
+            byte outCode0 = OutCode(x0, y0, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM),
+                 outCode1 = OutCode(x1, y1, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM),
+                 outCode;
+            bool accept = false;
+            float x = 0, y = 0;
+
+            while (true)
+            {
+                if ((outCode0 | outCode1) == 0)
+                {
+                    accept = true;
+                    break;
+                }
+                else if ((outCode0 & outCode1) != 0)
+                {
+                    break;
+                }
+                else
+                {
+                    outCode = (outCode0 != 0) ? outCode0 : outCode1;
+
+                    if ((outCode & LEFT) != 0)
+                    {
+                        x = BOUND_LEFT;
+                        y = y0 + (y1 - y0) * (BOUND_LEFT - x0) / (x1 - x0);
+                    }
+                    else if ((outCode & RIGHT) != 0)
+                    {
+                        x = BOUND_RIGHT;
+                        y = y0 + (y1 - y0) * (BOUND_RIGHT - x0) / (x1 - x0);
+                    }
+                    else if ((outCode & TOP) != 0)
+                    {
+                        x = x0 + (x1 - x0) * (BOUND_TOP - y0) / (y1 - y0);
+                        y = BOUND_TOP;
+                    }
+                    else if ((outCode & BOTTOM) != 0)
+                    {
+                        x = x0 + (x1 - x0) * (BOUND_BOTTOM - y0) / (y1 - y0);
+                        y = BOUND_BOTTOM;
+                    }
+
+                    if (outCode0 != 0)
+                    {
+                        x0 = x; y0 = y;
+                        outCode0 = OutCode(x0, y0, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM);
+                    }
+                    else
+                    {
+                        x1 = x; y1 = y;
+                        outCode1 = OutCode(x1, y1, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM);
+                    }
+                }
+            }
+            PointF point1 = new PointF(x0, y0);
+            PointF point2 = new PointF(x1, y1);
+            if (!list.Contains(point1)) list.Add(point1);
+            if (!list.Contains(point2)) list.Add(point2);
 
             if (accept)
-                g.DrawLine(Pens.Green, x0, y0, x1, y1);
+                g.DrawLine(PenInPolygon, x0, y0, x1, y1);
         }
-         
+
         private byte OutCode(float x, float y, int BOUND_LEFT, int BOUND_RIGHT, int BOUND_TOP, int BOUND_BOTTOM)
         {
             byte code = 0;
