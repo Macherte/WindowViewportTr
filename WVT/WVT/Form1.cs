@@ -51,20 +51,32 @@ namespace WVT
 
             if (DrawPolygonMode)
             {
-                for (int i = 0; i < Points.Count; i++)
+                if (Points.Count == 1)
                 {
-                    if (Points.Count == 1)
+                    g.DrawRectangle(red, Points[0].X, Points[0].Y, 1, 1);
+                    g.DrawRectangle(blue, Transformed[0].X, Transformed[0].Y, 1, 1);
+                }
+                else if (Points.Count == 2)
+                {
+                    g.DrawLine(red, Points[0], Points[1]);
+                    g.DrawLine(blue, Transformed[0], Transformed[1]);
+                }
+                else
+                {
+                    for (int i = 0; i < Points.Count; i++)
                     {
-                        g.DrawRectangle(red, Points[i].X, Points[i].Y, 1, 1);
-                        g.DrawRectangle(blue, Transformed[i].X, Transformed[i].Y, 1, 1);
-                    }
-                    else
-                    {
-                        g.DrawPolygon(red, Points.ToArray());
-                        g.DrawPolygon(blue, Transformed.ToArray());
+                        if (i == Points.IndexOf(Points.Last()))
+                        {
+                            g.DrawLine(red, Points[i], Points[0]);
+                            g.DrawLine(blue, Transformed[i], Transformed[0]);
+                        }
+                        else
+                        {
+                            g.DrawLine(red, Points[i], Points[i + 1]);
+                            g.DrawLine(blue, Transformed[i], Transformed[i + 1]);
+                        }
                     }
                 }
-
             }
         }
 
