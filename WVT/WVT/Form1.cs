@@ -14,15 +14,11 @@ namespace WVT
     {
         Graphics g;
         PointF A, B;
-        Pen Boundary;
-        Pen red = Pens.Red;
-        Pen blue = Pens.Blue;
+        Pen Boundary, red = Pens.Red, blue = Pens.Blue;
         Rectangle Window, ViewPort;
         int WindowWidth, WindowHeight, ViewWidth, ViewHeight;
         Point WindowLoc, ViewLoc;
-        bool DrawPolygonMode;
-        bool DrawWindow;
-        bool MouseDown;
+        bool DrawPolygonMode, DrawWindow, MousePressed;
         List<PointF> Points;
 
 
@@ -37,12 +33,7 @@ namespace WVT
 
             DrawPolygonMode = false;
             DrawWindow = true;
-            MouseDown = false;
-
-            //Window = new Rectangle(50, 50, 200, 170);
-            //ViewPort = new Rectangle(50, 50, 200, 85);
-            //Window = new Rectangle();
-            //ViewPort = new Rectangle();
+            MousePressed = false;
         }
 
         private void Canvas_Paint(object sender, PaintEventArgs e)
@@ -50,10 +41,6 @@ namespace WVT
             g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
             g.DrawLine(Boundary, A, B);
-            //g.DrawRectangle(Boundary, Window);
-            //g.DrawRectangle(Boundary, A.X + ViewPort.X, ViewPort.Y, ViewPort.Width, ViewPort.Height);
-
-
 
             g.DrawRectangle(Boundary, Window);
             if (!DrawWindow)
@@ -93,7 +80,7 @@ namespace WVT
 
         private void Canvas_MouseDown(object sender, MouseEventArgs e)
         {
-            MouseDown = true;
+            MousePressed = true;
             if (!DrawPolygonMode)
             {
                 if (DrawWindow)
@@ -111,7 +98,7 @@ namespace WVT
 
         private void Canvas_MouseMove(object sender, MouseEventArgs e)
         {
-            if (MouseDown)
+            if (MousePressed)
             {
                 if (!DrawPolygonMode)
                 {
@@ -147,7 +134,7 @@ namespace WVT
             }
 
 
-            MouseDown = false;
+            MousePressed = false;
 
         }
 
@@ -162,7 +149,7 @@ namespace WVT
             int xv = (int)(XVmin + (xw - XWmin) * sx);
             int yv = (int)(YVmin + (yw - YWmin) * sy);
 
-            return new PointF(A.X + xv, yv);
+            return new PointF(xv, yv);
         }
     }
 }
