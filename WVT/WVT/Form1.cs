@@ -21,7 +21,10 @@ namespace WVT
         bool DrawPolygonMode, DrawWindow, MousePressed;
         List<PointF> Points;
         List<PointF> Transformed;
-
+        byte LEFT = 1,     
+             RIGHT = 2,     
+             BOTTOM = 4,    
+             TOP = 8;
 
         public Form1()
         {
@@ -154,6 +157,80 @@ namespace WVT
             int yv = (int)(YVmin + (yw - YWmin) * sy);
 
             return new PointF(xv, yv);
+        }
+
+        private void CohenSutherland(Pen pen, float x0, float y0, float x1, float y1, int BOUND_LEFT, int BOUND_RIGHT, int BOUND_TOP, int BOUND_BOTTOM)
+        {
+            byte outCode0 = OutCode(x0, y0, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM),
+                 outCode1 = OutCode(x1, y1, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM),
+                 outCode;
+            bool accept = false;
+            float x = 0, y = 0;
+
+            while (true)
+            {
+                if ((outCode0 | outCode1) == 0)
+                {
+                    accept = true;
+                    break;
+                }
+                else if ((outCode0 & outCode1) != 0)
+                {
+                    break;
+                }
+                else
+                {
+                    outCode = (outCode0 != 0) ? outCode0 : outCode1;
+
+                    if ((outCode & LEFT) != 0)
+                    {
+                        x = BOUND_LEFT;
+                        y = y0 + (y1 - y0) * (BOUND_LEFT - x0) / (x1 - x0);
+                    }
+                    else if ((outCode & RIGHT) != 0)
+                    {
+                        x = BOUND_RIGHT;
+                        y = y0 + (y1 - y0) * (BOUND_RIGHT - x0) / (x1 - x0);
+                    }
+                    else if ((outCode & TOP) != 0)
+                    {
+                        x = x0 + (x1 - x0) * (BOUND_TOP - y0) / (y1 - y0);
+                        y = BOUND_TOP;
+                    }
+                    else if ((outCode & BOTTOM) != 0)
+                    {
+                        x = x0 + (x1 - x0) * (BOUND_BOTTOM - y0) / (y1 - y0);
+                        y = BOUND_BOTTOM;
+                    }
+
+                    if (outCode0 != 0)
+                    {
+                        x0 = x; y0 = y;
+                        outCode0 = OutCode(x0, y0, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM);
+                    }
+                    else
+                    {
+                        x1 = x; y1 = y;
+                        outCode1 = OutCode(x1, y1, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM);
+                    }
+                }
+            }
+
+            if (accept)
+                g.DrawLine(Pens.Green, x0, y0, x1, y1);
+        }
+         
+        private byte OutCode(float x, float y, int BOUND_LEFT, int BOUND_RIGHT, int BOUND_TOP, int BOUND_BOTTOM)
+        {
+            byte code = 0;
+
+            if (x < BOUND_LEFT) code |= LEFT;
+            else if (x > BOUND_RIGHT) code |= RIGHT;
+
+            if (y < BOUND_TOP) code |= TOP;
+            else if (y > BOUND_BOTTOM) code |= BOTTOM;
+
+            return code;
         }
     }
 }
