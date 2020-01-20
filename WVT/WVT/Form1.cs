@@ -107,7 +107,7 @@ namespace WVT
                             CohenSutherland(Transformed[i], Transformed[i + 1], ViewPort.X, ViewPort.X + ViewPort.Width, ViewPort.Y, ViewPort.Y + ViewPort.Height, ViewPolygonToFill);
 
                         }
-                        if(WindowPolygonToFill.Count > 2)
+                        if (i == Points.Count - 1)
                         {
                             g.FillPolygon(BrushFillPolygon, WindowPolygonToFill.ToArray());
                             g.FillPolygon(BrushFillPolygon, ViewPolygonToFill.ToArray());
@@ -259,7 +259,10 @@ namespace WVT
             float x0 = Start.X, y0 = Start.Y, x1 = End.X, y1 = End.Y;
             byte outCode0 = OutCode(x0, y0, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM),
                  outCode1 = OutCode(x1, y1, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM),
+                 outCode0Copy = outCode0,
+                 outCode1Copy = outCode1,
                  outCode;
+            int outCodeCopy = outCode1 | outCode0;
             bool accept = false;
             float p1ax, p1ay, p2ax, p2ay;
             float x = 0, y = 0;
@@ -312,7 +315,7 @@ namespace WVT
                     }
                 }
             }
-            
+
 
             if (accept)
             {
@@ -335,6 +338,42 @@ namespace WVT
 
                 g.DrawLine(PenInPolygon, x0, y0, x1, y1);
             }
+            else
+            {
+                if (outCode0Copy == 1 || outCode1Copy == 1)
+                {
+                    if (outCodeCopy == 5 || outCodeCopy == 7)
+                    {
+                        PointF point = new PointF(BOUND_LEFT, BOUND_BOTTOM);
+                        if (!list.Contains(point)) list.Add(point);
+                    }
+                }
+                else
+                {
+                    if (outCodeCopy == 9 || outCodeCopy == 11)
+                    {
+                        PointF point = new PointF(BOUND_LEFT, BOUND_TOP);
+                        if (!list.Contains(point)) list.Add(point);
+                    }
+                }
+
+                if (outCode0Copy == 2 || outCode1Copy == 2)
+                {
+                    if (outCodeCopy == 6 || outCodeCopy == 7)
+                    {
+                        PointF point = new PointF(BOUND_RIGHT, BOUND_BOTTOM);
+                        if (!list.Contains(point)) list.Add(point);
+                    }
+                }
+                else
+                {
+                    if (outCodeCopy == 10 || outCodeCopy == 11)
+                    {
+                        PointF point = new PointF(BOUND_RIGHT, BOUND_TOP);
+                        if (!list.Contains(point)) list.Add(point);
+                    }
+                }
+            }
         }
 
         private byte OutCode(float x, float y, int BOUND_LEFT, int BOUND_RIGHT, int BOUND_TOP, int BOUND_BOTTOM)
@@ -348,6 +387,23 @@ namespace WVT
             else if (y > BOUND_BOTTOM) code |= BOTTOM;
 
             return code;
+        }
+
+        private void SutherlandHodgman(PointF[] subjectPolygon, PointF[] clipPolygon)
+        {
+            PointF[] outputList = subjectPolygon;
+
+            foreach (Edge ClipEdge in clipPolygon)
+            {
+                PointF[] InputList = outputList;
+                outputList = null;
+
+                for (int i = 0; i < InputList.Length; i++)
+                {
+                    PointF CurrentPoint = InputList[i];
+
+                }
+            }
         }
     }
 }
