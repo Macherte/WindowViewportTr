@@ -80,9 +80,8 @@ namespace WVT
                 {
                     for (int i = 0; i < Points.Count; i++)
                     {
-                        
-                        ax = (Points[i].X - Window.X) / ((Window.X + Window.Width) - Window.X);
-                        ay = (Points[i].Y - Window.Y) / ((Window.Y + Window.Height) - Window.Y);
+                        ax = (Points[i].X - Window.X) / Window.Width;
+                        ay = (Points[i].Y - Window.Y) / Window.Height;
                         if (ax >= 0 && ax <= 1 && ay >= 0 && ay <= 1)
                         {
                             WindowPolygonToFill.Add(Points[i]);
@@ -108,8 +107,11 @@ namespace WVT
                             CohenSutherland(Transformed[i], Transformed[i + 1], ViewPort.X, ViewPort.X + ViewPort.Width, ViewPort.Y, ViewPort.Y + ViewPort.Height, ViewPolygonToFill);
 
                         }
-                        g.FillPolygon(BrushFillPolygon, WindowPolygonToFill.ToArray());
-                        g.FillPolygon(BrushFillPolygon, ViewPolygonToFill.ToArray());
+                        if(WindowPolygonToFill.Count > 2)
+                        {
+                            g.FillPolygon(BrushFillPolygon, WindowPolygonToFill.ToArray());
+                            g.FillPolygon(BrushFillPolygon, ViewPolygonToFill.ToArray());
+                        }
                     }
                 }
             }
@@ -259,6 +261,7 @@ namespace WVT
                  outCode1 = OutCode(x1, y1, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM),
                  outCode;
             bool accept = false;
+            float p1ax, p1ay, p2ax, p2ay;
             float x = 0, y = 0;
 
             while (true)
@@ -309,13 +312,29 @@ namespace WVT
                     }
                 }
             }
-            PointF point1 = new PointF(x0, y0);
-            PointF point2 = new PointF(x1, y1);
-            if (!list.Contains(point1)) list.Add(point1);
-            if (!list.Contains(point2)) list.Add(point2);
+            
 
             if (accept)
+            {
+                PointF point1 = new PointF(x0, y0);
+                PointF point2 = new PointF(x1, y1);
+
+                p1ax = (point1.X - BOUND_LEFT) / BOUND_RIGHT;
+                p1ay = (point1.Y - BOUND_TOP) / BOUND_BOTTOM;
+                if (p1ax >= 0 && p1ax <= 1 && p1ay >= 0 && p1ay <= 1)
+                {
+                    if (!list.Contains(point1)) list.Add(point1);
+                }
+
+                p2ax = (point2.X - BOUND_LEFT) / BOUND_RIGHT;
+                p2ay = (point2.Y - BOUND_TOP) / BOUND_BOTTOM;
+                if (p2ax >= 0 && p2ax <= 1 && p2ay >= 0 && p2ay <= 1)
+                {
+                    if (!list.Contains(point2)) list.Add(point2);
+                }
+
                 g.DrawLine(PenInPolygon, x0, y0, x1, y1);
+            }
         }
 
         private byte OutCode(float x, float y, int BOUND_LEFT, int BOUND_RIGHT, int BOUND_TOP, int BOUND_BOTTOM)
