@@ -17,31 +17,8 @@ namespace WVT
         Pen PenBoundary, PenPolygon, PenInPolygon;
         Brush BrushFillPolygon;
         Rectangle Window, ViewPort;
-        int WindowWidth, WindowHeight, ViewWidth, ViewHeight;
         bool DrawPolygonMode, DrawWindow, MousePressed, ValidPoint;
-        List<PointF> Points, Transformed, WindowPolygonToFill, ViewPolygonToFill;
-
-        private void ResetWnV_Click(object sender, EventArgs e)
-        {
-            WindowClipPolygon = null;
-            ViewClipPolygon = null;
-            Points.Clear();
-            Transformed.Clear();
-            DrawPolygonMode = false;
-            DrawWindow = true;
-            MousePressed = false;
-            Window.Width = 0;
-            Window.Height = 0;
-            Canvas.Refresh();
-        }
-
-        private void ResetPoly_Click(object sender, EventArgs e)
-        {
-            Points.Clear();
-            Transformed.Clear();
-            Canvas.Refresh();
-        }
-
+        List<PointF> Points, Transformed;
         List<Edge> WindowClipPolygon;
         List<Edge> ViewClipPolygon;
 
@@ -58,8 +35,6 @@ namespace WVT
 
             Points = new List<PointF>();
             Transformed = new List<PointF>();
-            WindowPolygonToFill = new List<PointF>();
-            ViewPolygonToFill = new List<PointF>();
 
             DrawPolygonMode = false;
             DrawWindow = true;
@@ -70,33 +45,36 @@ namespace WVT
         {
             g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+
             g.DrawLine(PenBoundary, A, B);
 
             g.DrawRectangle(PenBoundary, Window);
-            if (!DrawWindow)
-                g.DrawRectangle(PenBoundary, ViewPort);
+            if (!DrawWindow) g.DrawRectangle(PenBoundary, ViewPort);
 
             if (DrawPolygonMode)
             {
-                WindowPolygonToFill.Clear();
-                ViewPolygonToFill.Clear();
                 if (Points.Count == 1)
                 {
                     g.DrawRectangle(PenPolygon, Points[0].X, Points[0].Y, 1, 1);
-                    g.DrawRectangle(PenPolygon, Transformed[0].X, Transformed[0].Y, 1, 1);
+                    if (Transformed[0].X > A.X)
+                        g.DrawRectangle(PenPolygon, Transformed[0].X, Transformed[0].Y, 1, 1);
                 }
                 else if (Points.Count > 0)
                 {
                     g.DrawPolygon(PenPolygon, Points.ToArray());
-                    g.DrawPolygon(PenPolygon, Transformed.ToArray());
-                    PointF[] InsidePolygon = SutherlandHodgman(Points, WindowClipPolygon).ToArray();
-                    PointF[] InsideTransPolygon = SutherlandHodgman(Transformed, ViewClipPolygon).ToArray();
-                    if (InsidePolygon.Length > 1)
+
+                    PointF[] DrawnTransPoly = SutherlandHodgman(Transformed, new List<Edge>() { new Edge(A, B) }).ToArray();
+                    if (DrawnTransPoly.Length > 1) g.DrawPolygon(PenPolygon, DrawnTransPoly);
+
+
+                    PointF[] InnerPolygon = SutherlandHodgman(Points, WindowClipPolygon).ToArray();
+                    PointF[] InnerTransPolygon = SutherlandHodgman(Transformed, ViewClipPolygon).ToArray();
+                    if (InnerPolygon.Length > 1)
                     {
-                        g.DrawPolygon(PenInPolygon, InsidePolygon);
-                        g.FillPolygon(BrushFillPolygon, InsidePolygon);
-                        g.DrawPolygon(PenInPolygon, InsideTransPolygon);
-                        g.FillPolygon(BrushFillPolygon, InsideTransPolygon);
+                        g.DrawPolygon(PenInPolygon, InnerPolygon);
+                        g.FillPolygon(BrushFillPolygon, InnerPolygon);
+                        g.DrawPolygon(PenInPolygon, InnerTransPolygon);
+                        g.FillPolygon(BrushFillPolygon, InnerTransPolygon);
                     }
                 }
             }
@@ -126,7 +104,6 @@ namespace WVT
                 }
             }
         }
-
         private void Canvas_MouseMove(object sender, MouseEventArgs e)
         {
             if (MousePressed)
@@ -137,9 +114,7 @@ namespace WVT
                     {
                         if (e.X > 0 && e.X < A.X && e.Y > 0 && e.Y < Canvas.Height)
                         {
-                            WindowWidth = e.X - Window.X;
-                            WindowHeight = e.Y - Window.Y;
-                            Window.Size = new Size(WindowWidth, WindowHeight);
+                            Window.Size = new Size(e.X - Window.X, e.Y - Window.Y);
                             Canvas.Invalidate();
                         }
                     }
@@ -147,16 +122,13 @@ namespace WVT
                     {
                         if (e.X > A.X && e.X < Canvas.Width && e.Y > 0 && e.Y < Canvas.Height)
                         {
-                            ViewWidth = e.X - ViewPort.X;
-                            ViewHeight = e.Y - ViewPort.Y;
-                            ViewPort.Size = new Size(ViewWidth, ViewHeight);
+                            ViewPort.Size = new Size(e.X - ViewPort.X, e.Y - ViewPort.Y);
                             Canvas.Invalidate();
                         }
                     }
                 }
             }
         }
-
         private void Canvas_MouseUp(object sender, MouseEventArgs e)
         {
             if (DrawPolygonMode)
@@ -248,7 +220,6 @@ namespace WVT
             }
             return OutputList;
         }
-
         private PointF? ComputeIntersection(Edge edge1, Edge edge2)
         {
             float A1 = edge1.Y2 - edge1.Y1, B1 = edge1.X1 - edge1.X2, C1 = A1 * edge1.X1 + B1 * edge1.Y1;
@@ -263,10 +234,29 @@ namespace WVT
             float y = (A1 * C2 - A2 * C1) / delta;
             return new PointF(x, y);
         }
-
         private bool IsLeft(PointF point, Edge edge)
         {
             return ((edge.X2 - edge.X1) * (point.Y - edge.Y1) - (edge.Y2 - edge.Y1) * (point.X - edge.X1)) <= 0;
+        }
+
+        private void ResetWnV_Click(object sender, EventArgs e)
+        {
+            WindowClipPolygon = null;
+            ViewClipPolygon = null;
+            Points.Clear();
+            Transformed.Clear();
+            DrawPolygonMode = false;
+            DrawWindow = true;
+            MousePressed = false;
+            Window.Width = 0;
+            Window.Height = 0;
+            Canvas.Refresh();
+        }
+        private void ResetPoly_Click(object sender, EventArgs e)
+        {
+            Points.Clear();
+            Transformed.Clear();
+            Canvas.Refresh();
         }
     }
 }
