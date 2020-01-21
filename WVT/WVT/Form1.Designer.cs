@@ -29,7 +29,8 @@
         private void InitializeComponent()
         {
             this.Canvas = new System.Windows.Forms.PictureBox();
-            this.button1 = new System.Windows.Forms.Button();
+            this.btn_ResetWnVp = new System.Windows.Forms.Button();
+            this.btn_ResetPoly = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.Canvas)).BeginInit();
             this.SuspendLayout();
             // 
@@ -46,15 +47,25 @@
             this.Canvas.MouseMove += new System.Windows.Forms.MouseEventHandler(this.Canvas_MouseMove);
             this.Canvas.MouseUp += new System.Windows.Forms.MouseEventHandler(this.Canvas_MouseUp);
             // 
-            // button1
+            // btn_ResetWnVp
             // 
-            this.button1.Location = new System.Drawing.Point(13, 419);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 1;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            this.btn_ResetWnVp.Location = new System.Drawing.Point(13, 419);
+            this.btn_ResetWnVp.Name = "btn_ResetWnVp";
+            this.btn_ResetWnVp.Size = new System.Drawing.Size(179, 23);
+            this.btn_ResetWnVp.TabIndex = 1;
+            this.btn_ResetWnVp.Text = "Reset Window and ViewPort";
+            this.btn_ResetWnVp.UseVisualStyleBackColor = true;
+            this.btn_ResetWnVp.Click += new System.EventHandler(this.ResetWnV_Click);
+            // 
+            // btn_ResetPoly
+            // 
+            this.btn_ResetPoly.Location = new System.Drawing.Point(198, 419);
+            this.btn_ResetPoly.Name = "btn_ResetPoly";
+            this.btn_ResetPoly.Size = new System.Drawing.Size(111, 23);
+            this.btn_ResetPoly.TabIndex = 2;
+            this.btn_ResetPoly.Text = "Reset Polygons";
+            this.btn_ResetPoly.UseVisualStyleBackColor = true;
+            this.btn_ResetPoly.Click += new System.EventHandler(this.ResetPoly_Click);
             // 
             // Form1
             // 
@@ -62,7 +73,8 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Gainsboro;
             this.ClientSize = new System.Drawing.Size(721, 449);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.btn_ResetPoly);
+            this.Controls.Add(this.btn_ResetWnVp);
             this.Controls.Add(this.Canvas);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Name = "Form1";
@@ -75,7 +87,8 @@
         #endregion
 
         private System.Windows.Forms.PictureBox Canvas;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button btn_ResetWnVp;
+        private System.Windows.Forms.Button btn_ResetPoly;
     }
 }
 

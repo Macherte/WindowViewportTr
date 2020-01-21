@@ -21,9 +21,25 @@ namespace WVT
         bool DrawPolygonMode, DrawWindow, MousePressed, ValidPoint;
         List<PointF> Points, Transformed, WindowPolygonToFill, ViewPolygonToFill;
 
-        private void button1_Click(object sender, EventArgs e)
+        private void ResetWnV_Click(object sender, EventArgs e)
         {
+            WindowClipPolygon = null;
+            ViewClipPolygon = null;
+            Points.Clear();
+            Transformed.Clear();
+            DrawPolygonMode = false;
+            DrawWindow = true;
+            MousePressed = false;
+            Window.Width = 0;
+            Window.Height = 0;
+            Canvas.Refresh();
+        }
 
+        private void ResetPoly_Click(object sender, EventArgs e)
+        {
+            Points.Clear();
+            Transformed.Clear();
+            Canvas.Refresh();
         }
 
         List<Edge> WindowClipPolygon;
@@ -69,7 +85,7 @@ namespace WVT
                     g.DrawRectangle(PenPolygon, Points[0].X, Points[0].Y, 1, 1);
                     g.DrawRectangle(PenPolygon, Transformed[0].X, Transformed[0].Y, 1, 1);
                 }
-                else
+                else if (Points.Count > 0)
                 {
                     g.DrawPolygon(PenPolygon, Points.ToArray());
                     g.DrawPolygon(PenPolygon, Transformed.ToArray());
@@ -96,7 +112,6 @@ namespace WVT
                 {
                     if (e.X < A.X)
                     {
-                        //WindowLoc = e.Location;
                         Window = new Rectangle(e.Location, new Size(1, 1));
                         ValidPoint = true;
                     }
@@ -105,7 +120,6 @@ namespace WVT
                 {
                     if (e.X > A.X)
                     {
-                        //ViewLoc = e.Location;
                         ViewPort = new Rectangle(e.Location, new Size(1, 1));
                         ValidPoint = true;
                     }
