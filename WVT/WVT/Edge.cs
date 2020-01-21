@@ -29,5 +29,15 @@ namespace WVT
         public float Y1 { get; set; }
         public float X2 { get; set; }
         public float Y2 { get; set; }
+        public PointF SP
+        {
+            get { return new PointF(X1, Y1); }
+            set { X1 = value.X; Y1 = value.Y; }
+        }
+        public PointF EP
+        {
+            get { return new PointF(X2, Y2); }
+            set { X2 = value.X; Y2 = value.Y; }
+        }
     }
 }

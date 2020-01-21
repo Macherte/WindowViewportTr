@@ -18,18 +18,12 @@ namespace WVT
         Brush BrushFillPolygon;
         Rectangle Window, ViewPort;
         int WindowWidth, WindowHeight, ViewWidth, ViewHeight;
-        float ax, ay;
         Point WindowLoc, ViewLoc;
         bool DrawPolygonMode, DrawWindow, MousePressed;
         List<PointF> Points, Transformed, WindowPolygonToFill, ViewPolygonToFill;
-        Edge[] WindowClipPolygon;
-        Edge[] ViewClipPolygon;
-
-        byte LEFT = 1,
-             RIGHT = 2,
-             BOTTOM = 4,
-             TOP = 8;
-
+        List<Edge> WindowClipPolygon;
+        List<Edge> ViewClipPolygon;
+        
         public Form1()
         {
             InitializeComponent();
@@ -70,50 +64,18 @@ namespace WVT
                     g.DrawRectangle(PenPolygon, Points[0].X, Points[0].Y, 1, 1);
                     g.DrawRectangle(PenPolygon, Transformed[0].X, Transformed[0].Y, 1, 1);
                 }
-                else if (Points.Count == 2)
-                {
-                    g.DrawLine(PenPolygon, Points[0], Points[1]);
-                    CohenSutherland(Points[0], Points[1], Window.X, Window.X + Window.Width, Window.Y, Window.Y + Window.Height);
-
-                    g.DrawLine(PenPolygon, Transformed[0], Transformed[1]);
-                    CohenSutherland(Transformed[0], Transformed[1], ViewPort.X, ViewPort.X + ViewPort.Width, ViewPort.Y, ViewPort.Y + ViewPort.Height);
-                }
                 else
                 {
-                    for (int i = 0; i < Points.Count; i++)
+                    g.DrawPolygon(PenPolygon, Points.ToArray());
+                    g.DrawPolygon(PenPolygon, Transformed.ToArray());
+                    PointF[] InsidePolygon = SutherlandHodgman(Points, WindowClipPolygon).ToArray();
+                    PointF[] InsideTransPolygon = SutherlandHodgman(Transformed, ViewClipPolygon).ToArray();
+                    if (InsidePolygon.Length > 1)
                     {
-                        ax = (Points[i].X - Window.X) / Window.Width;
-                        ay = (Points[i].Y - Window.Y) / Window.Height;
-                        if (ax >= 0 && ax <= 1 && ay >= 0 && ay <= 1)
-                        {
-                            WindowPolygonToFill.Add(Points[i]);
-                            ViewPolygonToFill.Add(Transformed[i]);
-                        }
-
-                        if (i == Points.IndexOf(Points.Last()))
-                        {
-                            g.DrawLine(PenPolygon, Points[i], Points[0]);
-                            CohenSutherland(Points[i], Points[0], Window.X, Window.X + Window.Width, Window.Y, Window.Y + Window.Height, WindowPolygonToFill);
-
-                            g.DrawLine(PenPolygon, Transformed[i], Transformed[0]);
-                            CohenSutherland(Transformed[i], Transformed[0], ViewPort.X, ViewPort.X + ViewPort.Width, ViewPort.Y, ViewPort.Y + ViewPort.Height, ViewPolygonToFill);
-
-                        }
-                        else
-                        {
-                            g.DrawLine(PenPolygon, Points[i], Points[i + 1]);
-                            CohenSutherland(Points[i], Points[i + 1], Window.X, Window.X + Window.Width, Window.Y, Window.Y + Window.Height, WindowPolygonToFill);
-
-
-                            g.DrawLine(PenPolygon, Transformed[i], Transformed[i + 1]);
-                            CohenSutherland(Transformed[i], Transformed[i + 1], ViewPort.X, ViewPort.X + ViewPort.Width, ViewPort.Y, ViewPort.Y + ViewPort.Height, ViewPolygonToFill);
-
-                        }
-                        if (i == Points.Count - 1)
-                        {
-                            g.FillPolygon(BrushFillPolygon, WindowPolygonToFill.ToArray());
-                            g.FillPolygon(BrushFillPolygon, ViewPolygonToFill.ToArray());
-                        }
+                        g.DrawPolygon(PenInPolygon, InsidePolygon);
+                        g.FillPolygon(BrushFillPolygon, InsidePolygon);
+                        g.DrawPolygon(PenInPolygon, InsideTransPolygon);
+                        g.FillPolygon(BrushFillPolygon, InsideTransPolygon);
                     }
                 }
             }
@@ -178,18 +140,24 @@ namespace WVT
                 if (DrawWindow)
                 {
                     DrawWindow = false;
-                    WindowClipPolygon = new Edge[] { new Edge(Window.X, Window.Y, Window.X, Window.Y + Window.Height),
-                                                     new Edge(Window.X, Window.Y + Window.Height, Window.X + Window.Width, Window.Y + Window.Height),
-                                                     new Edge(Window.X + Window.Width, Window.Y + Window.Height, Window.X + Window.Width, Window.Y),
-                                                     new Edge(Window.X + Window.Width, Window.Y, Window.X, Window.Y)};
+                    WindowClipPolygon = new List<Edge>
+                    {
+                        new Edge(Window.X, Window.Y, Window.X, Window.Y + Window.Height),
+                        new Edge(Window.X, Window.Y + Window.Height, Window.X + Window.Width, Window.Y + Window.Height),
+                        new Edge(Window.X + Window.Width, Window.Y + Window.Height, Window.X + Window.Width, Window.Y),
+                        new Edge(Window.X + Window.Width, Window.Y, Window.X, Window.Y)
+                    };
                 }
                 else
                 {
                     DrawPolygonMode = true;
-                    ViewClipPolygon = new Edge[] { new Edge(ViewPort.X,  ViewPort.Y, ViewPort.X, ViewPort.Y + ViewPort.Height),
-                                                   new Edge(ViewPort.X,  ViewPort.Y + ViewPort.Height, ViewPort.X + ViewPort.Width, ViewPort.Y + ViewPort.Height),
-                                                   new Edge(ViewPort.X + ViewPort.Width, ViewPort.Y + ViewPort.Height, ViewPort.X + ViewPort.Width, ViewPort.Y),
-                                                   new Edge(ViewPort.X + ViewPort.Width, ViewPort.Y, ViewPort.X, ViewPort.Y)};
+                    ViewClipPolygon = new List<Edge>()
+                    {
+                        new Edge(ViewPort.X, ViewPort.Y, ViewPort.X, ViewPort.Y + ViewPort.Height),
+                        new Edge(ViewPort.X, ViewPort.Y + ViewPort.Height, ViewPort.X + ViewPort.Width, ViewPort.Y + ViewPort.Height),
+                        new Edge(ViewPort.X + ViewPort.Width, ViewPort.Y + ViewPort.Height, ViewPort.X + ViewPort.Width, ViewPort.Y),
+                        new Edge(ViewPort.X + ViewPort.Width, ViewPort.Y, ViewPort.X, ViewPort.Y)
+                    };
                 }
             }
             MousePressed = false;
@@ -209,234 +177,39 @@ namespace WVT
             return new PointF(xv, yv);
         }
 
-        private void CohenSutherland(PointF Start, PointF End, int BOUND_LEFT, int BOUND_RIGHT, int BOUND_TOP, int BOUND_BOTTOM)
+        private List<PointF> SutherlandHodgman(List<PointF> SubjectPolygon, List<Edge> ClipPolygon)
         {
-            float x0 = Start.X, y0 = Start.Y, x1 = End.X, y1 = End.Y;
-            byte outCode0 = OutCode(x0, y0, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM),
-                 outCode1 = OutCode(x1, y1, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM),
-                 outCode;
-            bool accept = false;
-            float x = 0, y = 0;
-
-            while (true)
-            {
-                if ((outCode0 | outCode1) == 0)
-                {
-                    accept = true;
-                    break;
-                }
-                else if ((outCode0 & outCode1) != 0)
-                {
-                    break;
-                }
-                else
-                {
-                    outCode = (outCode0 != 0) ? outCode0 : outCode1;
-
-                    if ((outCode & LEFT) != 0)
-                    {
-                        x = BOUND_LEFT;
-                        y = y0 + (y1 - y0) * (BOUND_LEFT - x0) / (x1 - x0);
-                    }
-                    else if ((outCode & RIGHT) != 0)
-                    {
-                        x = BOUND_RIGHT;
-                        y = y0 + (y1 - y0) * (BOUND_RIGHT - x0) / (x1 - x0);
-                    }
-                    else if ((outCode & TOP) != 0)
-                    {
-                        x = x0 + (x1 - x0) * (BOUND_TOP - y0) / (y1 - y0);
-                        y = BOUND_TOP;
-                    }
-                    else if ((outCode & BOTTOM) != 0)
-                    {
-                        x = x0 + (x1 - x0) * (BOUND_BOTTOM - y0) / (y1 - y0);
-                        y = BOUND_BOTTOM;
-                    }
-
-                    if (outCode0 != 0)
-                    {
-                        x0 = x; y0 = y;
-                        outCode0 = OutCode(x0, y0, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM);
-                    }
-                    else
-                    {
-                        x1 = x; y1 = y;
-                        outCode1 = OutCode(x1, y1, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM);
-                    }
-                }
-            }
-            if (accept)
-                g.DrawLine(PenInPolygon, x0, y0, x1, y1);
-        }
-
-        private void CohenSutherland(PointF Start, PointF End, int BOUND_LEFT, int BOUND_RIGHT, int BOUND_TOP, int BOUND_BOTTOM, List<PointF> list)
-        {
-            float x0 = Start.X, y0 = Start.Y, x1 = End.X, y1 = End.Y;
-            byte outCode0 = OutCode(x0, y0, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM),
-                 outCode1 = OutCode(x1, y1, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM),
-                 outCode0Copy = outCode0,
-                 outCode1Copy = outCode1,
-                 outCode;
-            int outCodeCopy = outCode1 | outCode0;
-            bool accept = false;
-            float p1ax, p1ay, p2ax, p2ay;
-            float x = 0, y = 0;
-
-            while (true)
-            {
-                if ((outCode0 | outCode1) == 0)
-                {
-                    accept = true;
-                    break;
-                }
-                else if ((outCode0 & outCode1) != 0)
-                {
-                    break;
-                }
-                else
-                {
-                    outCode = (outCode0 != 0) ? outCode0 : outCode1;
-
-                    if ((outCode & LEFT) != 0)
-                    {
-                        x = BOUND_LEFT;
-                        y = y0 + (y1 - y0) * (BOUND_LEFT - x0) / (x1 - x0);
-                    }
-                    else if ((outCode & RIGHT) != 0)
-                    {
-                        x = BOUND_RIGHT;
-                        y = y0 + (y1 - y0) * (BOUND_RIGHT - x0) / (x1 - x0);
-                    }
-                    else if ((outCode & TOP) != 0)
-                    {
-                        x = x0 + (x1 - x0) * (BOUND_TOP - y0) / (y1 - y0);
-                        y = BOUND_TOP;
-                    }
-                    else if ((outCode & BOTTOM) != 0)
-                    {
-                        x = x0 + (x1 - x0) * (BOUND_BOTTOM - y0) / (y1 - y0);
-                        y = BOUND_BOTTOM;
-                    }
-
-                    if (outCode0 != 0)
-                    {
-                        x0 = x; y0 = y;
-                        outCode0 = OutCode(x0, y0, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM);
-                    }
-                    else
-                    {
-                        x1 = x; y1 = y;
-                        outCode1 = OutCode(x1, y1, BOUND_LEFT, BOUND_RIGHT, BOUND_TOP, BOUND_BOTTOM);
-                    }
-                }
-            }
-
-
-            if (accept)
-            {
-                PointF point1 = new PointF(x0, y0);
-                PointF point2 = new PointF(x1, y1);
-
-                p1ax = (point1.X - BOUND_LEFT) / BOUND_RIGHT;
-                p1ay = (point1.Y - BOUND_TOP) / BOUND_BOTTOM;
-                if (p1ax >= 0 && p1ax <= 1 && p1ay >= 0 && p1ay <= 1)
-                {
-                    if (!list.Contains(point1)) list.Add(point1);
-                }
-
-                p2ax = (point2.X - BOUND_LEFT) / BOUND_RIGHT;
-                p2ay = (point2.Y - BOUND_TOP) / BOUND_BOTTOM;
-                if (p2ax >= 0 && p2ax <= 1 && p2ay >= 0 && p2ay <= 1)
-                {
-                    if (!list.Contains(point2)) list.Add(point2);
-                }
-
-                g.DrawLine(PenInPolygon, x0, y0, x1, y1);
-            }
-            else
-            {
-                if (outCode0Copy == 1 || outCode1Copy == 1)
-                {
-                    if (outCodeCopy == 5 || outCodeCopy == 7)
-                    {
-                        PointF point = new PointF(BOUND_LEFT, BOUND_BOTTOM);
-                        if (!list.Contains(point)) list.Add(point);
-                    }
-                }
-                else
-                {
-                    if (outCodeCopy == 9 || outCodeCopy == 11)
-                    {
-                        PointF point = new PointF(BOUND_LEFT, BOUND_TOP);
-                        if (!list.Contains(point)) list.Add(point);
-                    }
-                }
-
-                if (outCode0Copy == 2 || outCode1Copy == 2)
-                {
-                    if (outCodeCopy == 6 || outCodeCopy == 7)
-                    {
-                        PointF point = new PointF(BOUND_RIGHT, BOUND_BOTTOM);
-                        if (!list.Contains(point)) list.Add(point);
-                    }
-                }
-                else
-                {
-                    if (outCodeCopy == 10 || outCodeCopy == 11)
-                    {
-                        PointF point = new PointF(BOUND_RIGHT, BOUND_TOP);
-                        if (!list.Contains(point)) list.Add(point);
-                    }
-                }
-            }
-        }
-
-        private byte OutCode(float x, float y, int BOUND_LEFT, int BOUND_RIGHT, int BOUND_TOP, int BOUND_BOTTOM)
-        {
-            byte code = 0;
-
-            if (x < BOUND_LEFT) code |= LEFT;
-            else if (x > BOUND_RIGHT) code |= RIGHT;
-
-            if (y < BOUND_TOP) code |= TOP;
-            else if (y > BOUND_BOTTOM) code |= BOTTOM;
-
-            return code;
-        }
-
-        private void SutherlandHodgman(PointF[] SubjectPolygon, Edge[] ClipPolygon)
-        {
-            PointF[] OutputList = SubjectPolygon;
+            List<PointF> OutputList = SubjectPolygon.ConvertAll(point => new PointF(point.X, point.Y));
 
             foreach (Edge ClipEdge in ClipPolygon)
             {
-                PointF[] InputList = OutputList;
-                Array.Clear(OutputList, 0, OutputList.Length);
+                List<PointF> InputList = OutputList.ConvertAll(point => new PointF(point.X, point.Y));
+                OutputList.Clear();
 
-                for (int i = 0; i < InputList.Length; i++)
+                for (int i = 0; i < InputList.Count; i++)
                 {
                     PointF CurrentPoint = InputList[i];
-                    PointF PrevPoint = InputList[(i + InputList.Length - 1) % InputList.Length];
-                    PointF IntersectiongPoint = ComputeIntersection(new Edge(PrevPoint, CurrentPoint), ClipEdge);
+                    PointF PrevPoint = InputList[(i + InputList.Count - 1) % InputList.Count];
+                    PointF? IntersectiongPoint = ComputeIntersection(new Edge(PrevPoint, CurrentPoint), ClipEdge);
 
-                    if (true) //CurrentPoint inside ClipEdge
+                    if (IsLeft(CurrentPoint, ClipEdge))
                     {
-                        if (true) //PrevPoint not inside ClipEdge
+                        if (!IsLeft(PrevPoint, ClipEdge))
                         {
-                            OutputList[i] = IntersectiongPoint;
+                            OutputList.Add((PointF)IntersectiongPoint);
                         }
-                        OutputList[i] = CurrentPoint;
+                        OutputList.Add(CurrentPoint);
                     }
-                    else if (true) //PrevPoint inside ClipEdge
+                    else if (IsLeft(PrevPoint, ClipEdge))
                     {
-                        OutputList[i] = IntersectiongPoint;
+                        OutputList.Add((PointF)IntersectiongPoint);
                     }
                 }
             }
+            return OutputList;
         }
 
-        private PointF ComputeIntersection(Edge edge1, Edge edge2)
+        private PointF? ComputeIntersection(Edge edge1, Edge edge2)
         {
             float A1 = edge1.Y2 - edge1.Y1, B1 = edge1.X1 - edge1.X2, C1 = A1 * edge1.X1 + B1 * edge1.Y1;
             float A2 = edge2.Y2 - edge2.Y1, B2 = edge2.X1 - edge2.X2, C2 = A2 * edge2.X1 + B2 * edge2.Y1;
@@ -444,11 +217,16 @@ namespace WVT
             float delta = A1 * B2 - A2 * B1;
 
             if (delta == 0)
-                throw new ArgumentException("Lines are parallel");
+                return null;
 
             float x = (B2 * C1 - B1 * C2) / delta;
             float y = (A1 * C2 - A2 * C1) / delta;
             return new PointF(x, y);
+        }
+
+        private bool IsLeft(PointF point, Edge edge)
+        {
+            return ((edge.X2 - edge.X1) * (point.Y - edge.Y1) - (edge.Y2 - edge.Y1) * (point.X - edge.X1)) <= 0;
         }
     }
 }
