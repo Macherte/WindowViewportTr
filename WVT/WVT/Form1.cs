@@ -18,12 +18,17 @@ namespace WVT
         Brush BrushFillPolygon;
         Rectangle Window, ViewPort;
         int WindowWidth, WindowHeight, ViewWidth, ViewHeight;
-        Point WindowLoc, ViewLoc;
-        bool DrawPolygonMode, DrawWindow, MousePressed;
+        bool DrawPolygonMode, DrawWindow, MousePressed, ValidPoint;
         List<PointF> Points, Transformed, WindowPolygonToFill, ViewPolygonToFill;
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+
+        }
+
         List<Edge> WindowClipPolygon;
         List<Edge> ViewClipPolygon;
-        
+
         public Form1()
         {
             InitializeComponent();
@@ -84,17 +89,26 @@ namespace WVT
         private void Canvas_MouseDown(object sender, MouseEventArgs e)
         {
             MousePressed = true;
+            ValidPoint = false;
             if (!DrawPolygonMode)
             {
                 if (DrawWindow)
                 {
                     if (e.X < A.X)
-                        WindowLoc = e.Location;
+                    {
+                        //WindowLoc = e.Location;
+                        Window = new Rectangle(e.Location, new Size(1, 1));
+                        ValidPoint = true;
+                    }
                 }
                 else
                 {
                     if (e.X > A.X)
-                        ViewLoc = e.Location;
+                    {
+                        //ViewLoc = e.Location;
+                        ViewPort = new Rectangle(e.Location, new Size(1, 1));
+                        ValidPoint = true;
+                    }
                 }
             }
         }
@@ -103,21 +117,27 @@ namespace WVT
         {
             if (MousePressed)
             {
-                if (!DrawPolygonMode)
+                if (!DrawPolygonMode && ValidPoint)
                 {
                     if (DrawWindow)
                     {
-                        WindowWidth = e.X - Window.X;
-                        WindowHeight = e.Y - Window.Y;
-                        Window = new Rectangle(WindowLoc, new Size(WindowWidth, WindowHeight));
-                        Canvas.Invalidate();
+                        if (e.X > 0 && e.X < A.X && e.Y > 0 && e.Y < Canvas.Height)
+                        {
+                            WindowWidth = e.X - Window.X;
+                            WindowHeight = e.Y - Window.Y;
+                            Window.Size = new Size(WindowWidth, WindowHeight);
+                            Canvas.Invalidate();
+                        }
                     }
                     else
                     {
-                        ViewWidth = e.X - ViewPort.X;
-                        ViewHeight = e.Y - ViewPort.Y;
-                        ViewPort = new Rectangle(ViewLoc, new Size(ViewWidth, ViewHeight));
-                        Canvas.Invalidate();
+                        if (e.X > A.X && e.X < Canvas.Width && e.Y > 0 && e.Y < Canvas.Height)
+                        {
+                            ViewWidth = e.X - ViewPort.X;
+                            ViewHeight = e.Y - ViewPort.Y;
+                            ViewPort.Size = new Size(ViewWidth, ViewHeight);
+                            Canvas.Invalidate();
+                        }
                     }
                 }
             }
@@ -127,37 +147,43 @@ namespace WVT
         {
             if (DrawPolygonMode)
             {
-                if (e.X > 0 && e.X < Canvas.Width && e.Y > 0 && e.Y < Canvas.Width)
+                if (e.X > 0 && e.X < A.X && e.Y > 0 && e.Y < Canvas.Width)
                 {
                     Points.Add(new PointF(e.X, e.Y));
                     Transformed.Add(WindowtoViewport((int)e.X, (int)e.Y, Window.X, Window.Y, Window.Width, Window.Height,
                                                                          ViewPort.X, ViewPort.Y, ViewPort.Width, ViewPort.Height));
+                    Canvas.Invalidate();
                 }
-                Canvas.Invalidate();
             }
-            else
+            else if (ValidPoint)
             {
                 if (DrawWindow)
                 {
-                    DrawWindow = false;
-                    WindowClipPolygon = new List<Edge>
+                    if (Window.Width > 9 && Window.Height > 9)
                     {
-                        new Edge(Window.X, Window.Y, Window.X, Window.Y + Window.Height),
-                        new Edge(Window.X, Window.Y + Window.Height, Window.X + Window.Width, Window.Y + Window.Height),
-                        new Edge(Window.X + Window.Width, Window.Y + Window.Height, Window.X + Window.Width, Window.Y),
-                        new Edge(Window.X + Window.Width, Window.Y, Window.X, Window.Y)
-                    };
+                        DrawWindow = false;
+                        WindowClipPolygon = new List<Edge>
+                        {
+                            new Edge(Window.X, Window.Y, Window.X, Window.Y + Window.Height),
+                            new Edge(Window.X, Window.Y + Window.Height, Window.X + Window.Width, Window.Y + Window.Height),
+                            new Edge(Window.X + Window.Width, Window.Y + Window.Height, Window.X + Window.Width, Window.Y),
+                            new Edge(Window.X + Window.Width, Window.Y, Window.X, Window.Y)
+                        };
+                    }
                 }
                 else
                 {
-                    DrawPolygonMode = true;
-                    ViewClipPolygon = new List<Edge>()
+                    if (ViewPort.Width > 9 && ViewPort.Height > 9)
                     {
-                        new Edge(ViewPort.X, ViewPort.Y, ViewPort.X, ViewPort.Y + ViewPort.Height),
-                        new Edge(ViewPort.X, ViewPort.Y + ViewPort.Height, ViewPort.X + ViewPort.Width, ViewPort.Y + ViewPort.Height),
-                        new Edge(ViewPort.X + ViewPort.Width, ViewPort.Y + ViewPort.Height, ViewPort.X + ViewPort.Width, ViewPort.Y),
-                        new Edge(ViewPort.X + ViewPort.Width, ViewPort.Y, ViewPort.X, ViewPort.Y)
-                    };
+                        DrawPolygonMode = true;
+                        ViewClipPolygon = new List<Edge>()
+                        {
+                            new Edge(ViewPort.X, ViewPort.Y, ViewPort.X, ViewPort.Y + ViewPort.Height),
+                            new Edge(ViewPort.X, ViewPort.Y + ViewPort.Height, ViewPort.X + ViewPort.Width, ViewPort.Y + ViewPort.Height),
+                            new Edge(ViewPort.X + ViewPort.Width, ViewPort.Y + ViewPort.Height, ViewPort.X + ViewPort.Width, ViewPort.Y),
+                            new Edge(ViewPort.X + ViewPort.Width, ViewPort.Y, ViewPort.X, ViewPort.Y)
+                        };
+                    }
                 }
             }
             MousePressed = false;
