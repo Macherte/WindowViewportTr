@@ -22,6 +22,8 @@ namespace WVT
         Point WindowLoc, ViewLoc;
         bool DrawPolygonMode, DrawWindow, MousePressed;
         List<PointF> Points, Transformed, WindowPolygonToFill, ViewPolygonToFill;
+        Edge[] WindowClipPolygon;
+        Edge[] ViewClipPolygon;
 
         byte LEFT = 1,
              RIGHT = 2,
@@ -173,8 +175,22 @@ namespace WVT
             }
             else
             {
-                if (DrawWindow) DrawWindow = false;
-                else DrawPolygonMode = true;
+                if (DrawWindow)
+                {
+                    DrawWindow = false;
+                    WindowClipPolygon = new Edge[] { new Edge(Window.X, Window.Y, Window.X, Window.Y + Window.Height),
+                                                     new Edge(Window.X, Window.Y + Window.Height, Window.X + Window.Width, Window.Y + Window.Height),
+                                                     new Edge(Window.X + Window.Width, Window.Y + Window.Height, Window.X + Window.Width, Window.Y),
+                                                     new Edge(Window.X + Window.Width, Window.Y, Window.X, Window.Y)};
+                }
+                else
+                {
+                    DrawPolygonMode = true;
+                    ViewClipPolygon = new Edge[] { new Edge(ViewPort.X,  ViewPort.Y, ViewPort.X, ViewPort.Y + ViewPort.Height),
+                                                   new Edge(ViewPort.X,  ViewPort.Y + ViewPort.Height, ViewPort.X + ViewPort.Width, ViewPort.Y + ViewPort.Height),
+                                                   new Edge(ViewPort.X + ViewPort.Width, ViewPort.Y + ViewPort.Height, ViewPort.X + ViewPort.Width, ViewPort.Y),
+                                                   new Edge(ViewPort.X + ViewPort.Width, ViewPort.Y, ViewPort.X, ViewPort.Y)};
+                }
             }
             MousePressed = false;
         }
@@ -389,21 +405,50 @@ namespace WVT
             return code;
         }
 
-        private void SutherlandHodgman(PointF[] subjectPolygon, PointF[] clipPolygon)
+        private void SutherlandHodgman(PointF[] SubjectPolygon, Edge[] ClipPolygon)
         {
-            PointF[] outputList = subjectPolygon;
+            PointF[] OutputList = SubjectPolygon;
 
-            foreach (Edge ClipEdge in clipPolygon)
+            foreach (Edge ClipEdge in ClipPolygon)
             {
-                PointF[] InputList = outputList;
-                outputList = null;
+                PointF[] InputList = OutputList;
+                Array.Clear(OutputList, 0, OutputList.Length);
 
                 for (int i = 0; i < InputList.Length; i++)
                 {
                     PointF CurrentPoint = InputList[i];
+                    PointF PrevPoint = InputList[(i + InputList.Length - 1) % InputList.Length];
+                    PointF IntersectiongPoint = ComputeIntersection(new Edge(PrevPoint, CurrentPoint), ClipEdge);
 
+                    if (true) //CurrentPoint inside ClipEdge
+                    {
+                        if (true) //PrevPoint not inside ClipEdge
+                        {
+                            OutputList[i] = IntersectiongPoint;
+                        }
+                        OutputList[i] = CurrentPoint;
+                    }
+                    else if (true) //PrevPoint inside ClipEdge
+                    {
+                        OutputList[i] = IntersectiongPoint;
+                    }
                 }
             }
+        }
+
+        private PointF ComputeIntersection(Edge edge1, Edge edge2)
+        {
+            float A1 = edge1.Y2 - edge1.Y1, B1 = edge1.X1 - edge1.X2, C1 = A1 * edge1.X1 + B1 * edge1.Y1;
+            float A2 = edge2.Y2 - edge2.Y1, B2 = edge2.X1 - edge2.X2, C2 = A2 * edge2.X1 + B2 * edge2.Y1;
+
+            float delta = A1 * B2 - A2 * B1;
+
+            if (delta == 0)
+                throw new ArgumentException("Lines are parallel");
+
+            float x = (B2 * C1 - B1 * C2) / delta;
+            float y = (A1 * C2 - A2 * C1) / delta;
+            return new PointF(x, y);
         }
     }
 }
